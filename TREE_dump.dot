@@ -1,0 +1,19 @@
+digraph BST {
+    rankdir=TB;
+    node [shape=box, style="filled, rounded", fillcolor="#e1d5e7", fontname="Courier", fontsize=10];
+    edge [color="#6c8ebf", penwidth=1.5];
+
+    node_0x1034d5ad0 [label="ptr: 0x1034d5ad0\nelem: 50\nleft: 0x1034d5af0\nright: 0x1034d5a70\nprev: 0x0"];
+    node_0x1034d5ad0 -> node_0x1034d5af0;
+    node_0x1034d5ad0 -> node_0x1034d5a70;
+    node_0x1034d5af0 [label="ptr: 0x1034d5af0\nelem: 20\nleft: 0x1034d5a30\nright: 0x1034d5a50\nprev: 0x1034d5ad0"];
+    node_0x1034d5af0 -> node_0x1034d5a30;
+    node_0x1034d5af0 -> node_0x1034d5a50;
+    node_0x1034d5a30 [label="ptr: 0x1034d5a30\nelem: 101\nleft: 0x0\nright: 0x0\nprev: 0x1034d5af0"];
+    node_0x1034d5a50 [label="ptr: 0x1034d5a50\nelem: 10\nleft: 0x0\nright: 0x0\nprev: 0x1034d5af0"];
+    node_0x1034d5a70 [label="ptr: 0x1034d5a70\nelem: 60\nleft: 0x1034d6f70\nright: 0x1034d6f90\nprev: 0x1034d5ad0"];
+    node_0x1034d5a70 -> node_0x1034d6f70;
+    node_0x1034d5a70 -> node_0x1034d6f90;
+    node_0x1034d6f70 [label="ptr: 0x1034d6f70\nelem: 52\nleft: 0x0\nright: 0x0\nprev: 0x1034d5a70"];
+    node_0x1034d6f90 [label="ptr: 0x1034d6f90\nelem: 67\nleft: 0x0\nright: 0x0\nprev: 0x1034d5a70"];
+}
