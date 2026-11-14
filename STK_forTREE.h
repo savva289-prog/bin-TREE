@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #define FILE_TO_ERRORS "stack_dump.txt"
 #define STACK_PTR struct stack_t *stk
