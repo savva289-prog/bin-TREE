@@ -6,9 +6,9 @@ int StackVerify(STACK_PTR)
 {
     if (stk == NULL)               return 1;
     if (stk->data == NULL)         return 2;
-    if (stk->capacity > stk->size) return 3;
+    if (stk->size > stk->capacity) return 3;
 
-    if (stk->data[-2] != POIZON || stk->data[-1] != POIZON || stk->data[stk->size] != POIZON || stk->data[stk->size + 1] != POIZON)
+    if (stk->data[-2] != POIZON || stk->data[-1] != POIZON || stk->data[stk->capacity] != POIZON || stk->data[stk->capacity + 1] != POIZON)
         return 4;
 
     return 0;
@@ -35,7 +35,7 @@ void StackDump(STACK_PTR, const char *file, int line, const char *func)
         if (stk->data != NULL)
         {
             fprintf(dump_file, "--- Данные ---\n");
-            for (size_t i = 0; i < stk->size + MEM_FOR_PIGEON; ++i)
+            for (size_t i = 0; i < stk->capacity + MEM_FOR_PIGEON; ++i)
                 fprintf(dump_file, "[%zu] = %p\n", i, stk->data[i - 2]);
         }
     }
@@ -45,45 +45,45 @@ void StackDump(STACK_PTR, const char *file, int line, const char *func)
         fclose(dump_file);
 }
 
-int StackResize(STACK_PTR, size_t new_size)
+int StackResize(STACK_PTR, size_t new_capacity)
 {
     ASSERT(stk != NULL);
-    ASSERT(new_size >= stk->capacity);
+    ASSERT(new_capacity >= stk->size);
 
     STACK_ELEM *old_ptr = stk->data - 2;
-    STACK_ELEM *new_ptr = (STACK_ELEM *)realloc(old_ptr, (new_size + MEM_FOR_PIGEON) * sizeof(STACK_ELEM));
+    STACK_ELEM *new_ptr = (STACK_ELEM *)realloc(old_ptr, (new_capacity + MEM_FOR_PIGEON) * sizeof(STACK_ELEM));
     ASSERT(new_ptr != NULL);
 
-    new_ptr[new_size + MEM_FOR_PIGEON - 1] = POIZON;
-    new_ptr[new_size + MEM_FOR_PIGEON - 2] = POIZON;
+    new_ptr[new_capacity + MEM_FOR_PIGEON - 1] = POIZON;
+    new_ptr[new_capacity + MEM_FOR_PIGEON - 2] = POIZON;
 
-    for (size_t i = stk->capacity + 2; i < new_size + 2; ++i)
+    for (size_t i = stk->size + 2; i < new_capacity + 2; ++i)
         new_ptr[i] = 0;
 
     stk->data = new_ptr + 2;
-    stk->size = new_size;
+    stk->capacity = new_capacity;
 
     return 0;
 }
 
 #ifdef STACK_DBG
-int StackInit_(STACK_PTR, size_t size GET_ARGS_FOR_DBG)
+int StackInit_(STACK_PTR, size_t capacity GET_ARGS_FOR_DBG)
 #else
-int StackInit(STACK_PTR, size_t size)
+int StackInit(STACK_PTR, size_t capacity)
 #endif
 {
     ON_DBG(stk->name = name; stk->file = file; stk->line = line;)
 
-    stk->capacity = 0;
-    stk->size = size;
+    stk->capacity = capacity;
+    stk->size = 0;
 
-    STACK_ELEM *temp_ptr = (STACK_ELEM *)calloc(size + MEM_FOR_PIGEON, sizeof(STACK_ELEM));
+    STACK_ELEM *temp_ptr = (STACK_ELEM *)calloc(capacity + MEM_FOR_PIGEON, sizeof(STACK_ELEM));
     assert(temp_ptr != NULL);
 
     temp_ptr[0]                         = POIZON;
     temp_ptr[1]                         = POIZON;
-    temp_ptr[size + MEM_FOR_PIGEON - 1] = POIZON;
-    temp_ptr[size + MEM_FOR_PIGEON - 2] = POIZON;  //todo
+    temp_ptr[capacity + MEM_FOR_PIGEON - 1] = POIZON;
+    temp_ptr[capacity + MEM_FOR_PIGEON - 2] = POIZON;  //todo
 
     stk->data = temp_ptr + 2;
 
@@ -100,8 +100,8 @@ int StackPush(STACK_PTR, STACK_ELEM element)
     STACK_ASSERT_OK(stk);
 
     int err = 0;
-    if (stk->capacity + 1 >= stk->size)
-        err = StackResize(stk, stk->size * 2);
+    if (stk->size + 1 >= stk->capacity)
+        err = StackResize(stk, stk->capacity * 2);
 
     if (err != 0)
     {
@@ -109,8 +109,8 @@ int StackPush(STACK_PTR, STACK_ELEM element)
         exit(EXIT_FAILURE);
     }
 
-    stk->data[stk->capacity] = element;
-    stk->capacity += 1;
+    stk->data[stk->size] = element;
+    stk->size += 1;
     
     STACK_ASSERT_OK(stk);
     return 0;
@@ -124,9 +124,9 @@ STACK_ELEM StackPop(STACK_PTR)
 {
     STACK_ASSERT_OK(stk);
 
-    stk->capacity -= 1;
-    STACK_ELEM pop_res = stk->data[stk->capacity];
-    stk->data[stk->capacity] = 0; 
+    stk->size -= 1;
+    STACK_ELEM pop_res = stk->data[stk->size];
+    stk->data[stk->size] = 0; 
 
     STACK_ASSERT_OK(stk);
     return pop_res;

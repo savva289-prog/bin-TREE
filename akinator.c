@@ -1,18 +1,22 @@
 #include "TREE.h"
 #include "STK_forTREE.h"
-//dot -Tpng TREE_dump.dot -o TREE_dump.png
+//dot -Tpng TREE_dump.dot -o TREE_dump.png  
+//gcc -g -fsanitize=address,undefined akinator.c stk_forTREE.c -o prog
+//git add .
+//git commit -m "changes"
+//git push
 
 int main()
 {
     TREE tr = {0};
     TREE_init(&tr);
-    printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+    //printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
     TREE_read(&tr, Ftxt_TREE_preorder, &TREE_preorder_parse);
-    printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+    //printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
     AKINATOR_menu(&tr);
-    printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+    //printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
     TREE_dump(&tr, Fdot_TREE_dump);
-    
+    TREE_save_to_file(&tr, Ftxt_TREE_preorder, &TREE_preorder_save);
     TREE_destroy(&tr);
 }
 
@@ -124,16 +128,12 @@ void TREE_dump(TREE *tree, const char *filename)
     fprintf(file, "    edge [color=\"#6c8ebf\", penwidth=1.5];\n\n");
 
     struct stack_t stk = {0};
-    StackInit(&stk, tree->size);
-    size_t top = 0;
-
+    StackInit(&stk, 16);
     StackPush(&stk, tree->root);
-    ++top;
 
-    while(top > 0)
+    while(stk.size > 0)
     {
         NODE *curr = StackPop(&stk);
-        --top;
 
         fprintf(file, "    node_%p [label=\"ptr: %p\\nelem: %s\\nleft: %p\\nright: %p\\nprev: %p\"];\n", 
                 (void*)curr, (void*)curr, curr->elem, (void*)curr->left, (void*)curr->right, (void*)curr->prev);
@@ -144,21 +144,20 @@ void TREE_dump(TREE *tree, const char *filename)
             fprintf(file, "    node_%p -> node_%p;\n", (void*)curr, (void*)curr->right);
 
         if(curr->right != NULL)
-        {
             StackPush(&stk, curr->right);
-            ++top;
-        }
 
         if(curr->left != NULL)
-        {
             StackPush(&stk, curr->left);
-            ++top;
-        }
     }
+    fprintf(file, "}\n");
 
     StackDestroy(&stk);
-    fprintf(file, "}\n");
     fclose(file);
+
+    int ret = system("dot -Tpng " Fdot_TREE_dump " -o " Fpng_TREE_dump);
+    if(ret != 0)
+        fprintf(stderr, "Ошибка при выполнении команды:"
+            " dot -Tpng " Fdot_TREE_dump " -o " Fpng_TREE_dump "(код %d)\n", ret);
 }
 
 void TREE_read(TREE *tree, const char *filename, void (*TREE_parse)(TREE *tree, char *curr_symbol))
@@ -174,7 +173,7 @@ void TREE_read(TREE *tree, const char *filename, void (*TREE_parse)(TREE *tree, 
     char *cpy_tree_str = tree_str;
     fread((void *)tree_str, size, size / sizeof(char), file);
     tree_str[size] = '\0';
-    //printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+
     TREE_parse(tree, cpy_tree_str);
 
     free(tree_str);
@@ -184,7 +183,6 @@ void TREE_read(TREE *tree, const char *filename, void (*TREE_parse)(TREE *tree, 
 
 void TREE_preorder_parse(TREE *tree, char *curr_symbol)
 {
-    printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
     assert(tree != NULL);
     assert(curr_symbol != NULL);
 
@@ -196,7 +194,7 @@ void TREE_preorder_parse(TREE *tree, char *curr_symbol)
     if(sscanf(++curr_symbol, "%255[^()]%n", tree->root->elem, &offset) != 1) exit(EXIT_FAILURE);
     curr_symbol += offset;
     StackPush(&stk, tree->root);
-printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+
     while(*curr_symbol != '\0')
         switch (*curr_symbol)
         {
@@ -208,12 +206,12 @@ printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
                 new_node->prev = StackPop(&stk);
                 StackPush(&stk, new_node->prev);
                 StackPush(&stk, new_node);
-                printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+               
                 if(sscanf(++curr_symbol, "%255[^()]%n", new_node->elem, &offset) != 1) exit(EXIT_FAILURE);
-                printf("\n\n%s::%d\n\n", __FILE__, __LINE__);
+                
                 new_node->left = NULL;
                 new_node->right = NULL;
-                        
+                
                 if(new_node->prev->left == NULL)
                     new_node->prev->left = new_node;
                 else
@@ -286,9 +284,9 @@ int AKINATOR_menu(TREE *tree)
                 curr_node = curr_node->left;
             else
             {
-                fprintf(Fuser_output, "ВИДИМО Я НЕ ЗНАЮ ТАКОГО\n");
+                fprintf(Fuser_output, "\nВИДИМО Я НЕ ЗНАЮ ТАКОГО\n");
                 TREE_create_user_node(tree, curr_node);
-                fprintf(Fuser_output, "ДАВАЙТЕ ЗАНОВО\n");
+                fprintf(Fuser_output, "\nДАВАЙТЕ ЗАНОВО\n");
                 curr_node = tree->root;
             } 
         }
@@ -336,4 +334,72 @@ void TREE_create_user_node(TREE *tree, NODE *curr_node)
         qwestion_node->prev->left = qwestion_node;
 
     tree->size += 2;
+}
+
+void TREE_save_to_file(TREE *tree, const char *filename, void (*TREE_save)(TREE *tree, struct stack_t *stk))
+{
+    assert(tree != NULL);
+    assert(filename != NULL);
+    assert(tree->root != NULL);
+
+    FILE *file = fopen(filename, "w");
+    assert(file != NULL);
+
+    struct stack_t stk = {0};
+    StackInit(&stk, 16);
+
+    TREE_save(tree, &stk);
+
+    while (stk.size > 0)
+    {
+        NODE *curr_node = StackPop(&stk);
+
+        if (curr_node == NULL)
+        {
+            fprintf(file, ")");
+            continue;
+        }
+
+        fprintf(file, "(%s", curr_node->elem);
+    }
+
+    StackDestroy(&stk);
+    fclose(file);
+}
+
+void TREE_preorder_save(TREE *tree, struct stack_t *stk_preorder)
+{
+    assert(tree != NULL);
+    assert(stk_preorder != NULL);
+    assert(tree->root != NULL);
+
+    struct stack_t work_stk = {0};
+    StackInit(&work_stk, 16);
+    StackPush(&work_stk, tree->root);
+
+    struct stack_t rev_stk = {0};
+    StackInit(&rev_stk, 16);
+
+    while (work_stk.size > 0)
+    {
+        NODE *curr_node = StackPop(&work_stk);
+        StackPush(&rev_stk, curr_node);
+
+        if (curr_node != NULL)
+        {
+            StackPush(&work_stk, NULL);
+
+            if (curr_node->right != NULL)
+                StackPush(&work_stk, curr_node->right);
+
+            if (curr_node->left != NULL)
+                StackPush(&work_stk, curr_node->left);
+        }
+    }
+
+    while (rev_stk.size > 0)
+        StackPush(stk_preorder, StackPop(&rev_stk));
+
+    StackDestroy(&work_stk);
+    StackDestroy(&rev_stk);
 }

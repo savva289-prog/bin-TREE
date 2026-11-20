@@ -46,8 +46,8 @@ struct stack_t //need canary for struct
 
 #ifdef STACK_DBG
 
-    #define StackInit(stk, size) StackInit_((stk), (size), #stk, __FILE__, __LINE__)
-    int StackInit_(STACK_PTR, size_t size GET_ARGS_FOR_DBG);
+    #define StackInit(stk, capacity) StackInit_((stk), (capacity), #stk, __FILE__, __LINE__)
+    int StackInit_(STACK_PTR, size_t capacity GET_ARGS_FOR_DBG);
 
     #define StackPush(stk, elem) StackPush_((stk), (elem), #elem, __FILE__, __LINE__)
     int StackPush_(STACK_PTR, STACK_ELEM element GET_ARGS_FOR_DBG);
@@ -57,7 +57,7 @@ struct stack_t //need canary for struct
 
 #else
 
-    int        StackInit   (STACK_PTR, size_t size);
+    int        StackInit   (STACK_PTR, size_t capacity);
     int        StackPush   (STACK_PTR, STACK_ELEM element);
     STACK_ELEM StackPop    (STACK_PTR);
 

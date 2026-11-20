@@ -13,6 +13,7 @@
 #define NEW_NODE (NODE *)calloc(1, sizeof(NODE))
 #define Fdot_TREE_dump "TREE_dump.dot"
 #define Ftxt_TREE_preorder "TREE_pr.txt"
+#define Fpng_TREE_dump "TREE_dump.png"
 #define Fuser_output stdout
 #define Fuser_input stdin
 
@@ -42,6 +43,8 @@ void TREE_read           (TREE *tree, const char *filename, void (*TREE_parse)(T
 void TREE_preorder_parse (TREE *tree, char *curr_symbol);
 void TREE_destroy        (TREE *tree);
 void TREE_create_user_node(TREE *tree, NODE *curr_node);
+void TREE_save_to_file(TREE *tree, const char *filename, void (*TREE_save)(TREE *tree, struct stack_t *stk));
+void TREE_preorder_save(TREE *tree, struct stack_t *stk);
 int AKINATOR_menu(TREE *tree);
 size_t wrapper_stat      (const char *filename);
 
